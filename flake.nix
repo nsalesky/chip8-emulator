@@ -18,8 +18,7 @@
 
           nativeBuildInputs = with pkgs; [
             pkg-config
-            gtk4
-            libadwaita
+            SDL2
           ];
         };
 
@@ -33,8 +32,7 @@
             pre-commit 
             rustPackages.clippy
 
-            gtk4
-            libadwaita
+            SDL2
           ];
           RUST_SRC_PATH = rustPlatform.rustLibSrc;
         };
