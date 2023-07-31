@@ -14,3 +14,4 @@ path = "src/main.rs"
 
 [dependencies]
 glium = "0.32.1"
+anyhow = "1.0.72"
