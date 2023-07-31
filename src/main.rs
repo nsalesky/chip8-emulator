@@ -1,5 +1,7 @@
+use anyhow::Result;
 use chip8::run;
 
-fn main() {
-    run();
+fn main() -> Result<()> {
+    run()?;
+    Ok(())
 }

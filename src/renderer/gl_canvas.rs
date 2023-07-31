@@ -1,7 +1,7 @@
-use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH, PIXEL_COLOR};
+use crate::constants::{CANVAS_HEIGHT, CANVAS_WIDTH, PIXEL_COLOR, PROJECTION_MATRIX};
 use anyhow::Result;
 use glium::{
-    index::PrimitiveType, uniforms::EmptyUniforms, Display, Frame, IndexBuffer, Program, Surface,
+    index::PrimitiveType, Display, DrawParameters, Frame, IndexBuffer, Program, Rect, Surface,
     VertexBuffer,
 };
 
@@ -18,10 +18,6 @@ pub struct GLCanvas {
     pixels: [bool; CANVAS_WIDTH * CANVAS_HEIGHT],
     vertex_buffer: VertexBuffer<Vertex>,
     index_buffer: IndexBuffer<u32>,
-
-    // vertices: [Vertex; (CANVAS_WIDTH + 1) * (CANVAS_HEIGHT + 1)],
-    indices: [u32; 6],
-
     program: Program,
 }
 
@@ -51,8 +47,8 @@ impl GLCanvas {
             1, 2, 3, // second triangle
         ];
 
-        let vertex_buffer = VertexBuffer::dynamic(display, &vertices)?;
-        let index_buffer = IndexBuffer::dynamic(display, PrimitiveType::TrianglesList, &indices)?;
+        let vertex_buffer = VertexBuffer::new(display, &vertices)?;
+        let index_buffer = IndexBuffer::new(display, PrimitiveType::TrianglesList, &indices)?;
 
         let program = program!(display,
             330 => {
@@ -65,9 +61,29 @@ impl GLCanvas {
             pixels: [false; CANVAS_WIDTH * CANVAS_HEIGHT],
             vertex_buffer,
             index_buffer,
-            indices,
             program,
         })
+    }
+
+    fn draw_pixel(&self, frame: &mut Frame, row: usize, col: usize) -> Result<()> {
+        let uniforms = uniform! {
+            projectionMatrix: *PROJECTION_MATRIX,
+            modelMatrix: [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [col as f32, row as f32, 0.0, 1.0],
+            ],
+        };
+
+        frame.draw(
+            &self.vertex_buffer,
+            &self.index_buffer,
+            &self.program,
+            &uniforms,
+            &Default::default(),
+        )?;
+        Ok(())
     }
 }
 
@@ -84,20 +100,21 @@ impl CanvasRenderer for GLCanvas {
     }
 
     fn draw(&self, frame: &mut Frame) -> Result<()> {
-        frame.draw(
-            &self.vertex_buffer,
-            &self.index_buffer,
-            &self.program,
-            &EmptyUniforms,
-            &Default::default(),
-        )?;
+        for row in 0..CANVAS_HEIGHT {
+            for col in 0..CANVAS_WIDTH {
+                if self.get_pixel(row, col)? {
+                    self.draw_pixel(frame, row, col)?;
+                }
+            }
+        }
+
         Ok(())
     }
 }
 
 fn check_bounds(row: usize, col: usize) -> Result<()> {
-    if row < CANVAS_HEIGHT || col < CANVAS_WIDTH {
-        bail!("Position ({}, {}) is out of bounds", row, col);
+    if row >= CANVAS_HEIGHT || col >= CANVAS_WIDTH {
+        bail!("Position ({}, {}) is out of bounds", row, col,);
     } else {
         Ok(())
     }
