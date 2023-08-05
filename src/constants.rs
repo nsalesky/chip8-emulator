@@ -1,3 +1,6 @@
+pub const WINDOW_WIDTH: u32 = 800;
+pub const WINDOW_HEIGHT: u32 = 600;
+
 pub const CANVAS_WIDTH: usize = 64;
 pub const CANVAS_HEIGHT: usize = 32;
 pub const PIXEL_COLOR: &[f32; 3] = &[1.0, 1.0, 1.0];

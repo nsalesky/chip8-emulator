@@ -14,10 +14,7 @@
           libGL
           libxkbcommon
           wayland
-          # xorg.libX11
-          # xorg.libXcursor
-          # xorg.libXi
-          # xorg.libXrandr
+          SDL2
         ];
       in
       {
@@ -34,7 +31,7 @@
             libxkbcommon
             libGL
             wayland
-            cmake
+            SDL2
             fontconfig
           ];
           postInstall = ''
@@ -55,9 +52,9 @@
             rustfmt 
             pre-commit 
             rustPackages.clippy
+            SDL2
           ];
           RUST_SRC_PATH = rustPlatform.rustLibSrc;
-          # LD_LIBRARY_PATH = "${lib.makeLibraryPath buildInputs}";
           LD_LIBRARY_PATH = libPath;
         };
       });

@@ -1,67 +1,45 @@
 mod constants;
 mod errors;
-mod renderer;
+
+use std::time::Duration;
 
 use anyhow::Result;
-use constants::{BACKGROUND_COLOR, CANVAS_HEIGHT, CANVAS_WIDTH};
-use glium::glutin::dpi::LogicalSize;
-use glium::glutin::event::{Event, WindowEvent};
-use glium::glutin::event_loop::EventLoop;
-use glium::glutin::window::WindowBuilder;
-use glium::glutin::ContextBuilder;
-use glium::{Display, Surface};
-use renderer::{CanvasRenderer, GLCanvas};
-
-#[macro_use]
-extern crate glium;
-
-#[macro_use]
-extern crate anyhow;
-
-#[derive(Copy, Clone)]
-struct Vertex {
-    position: [f32; 2],
-}
-implement_vertex!(Vertex, position);
+use constants::{BACKGROUND_COLOR, CANVAS_HEIGHT, CANVAS_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH};
+use sdl2::{event::Event, hint, keyboard::Keycode, pixels::Color};
 
 pub fn run() -> Result<()> {
-    let event_loop = EventLoop::new();
-    let window_builder = WindowBuilder::new()
-        .with_inner_size(LogicalSize::new(640.0, 480.0))
-        .with_title("Chip 8");
+    let sdl_context = sdl2::init().unwrap();
+    let video_subsystem = sdl_context.video().unwrap();
 
-    let context_builder = ContextBuilder::new();
+    let window = video_subsystem
+        .window("chip8", WINDOW_WIDTH, WINDOW_HEIGHT)
+        .position_centered()
+        .build()
+        .unwrap();
 
-    let display = Display::new(window_builder, context_builder, &event_loop)?;
+    let mut canvas = window.into_canvas().build().unwrap();
 
-    let mut canvas = GLCanvas::new(&display)?;
+    canvas.set_draw_color(Color::RGB(0, 0, 0));
+    canvas.clear();
+    canvas.present();
 
-    for row in 0..CANVAS_HEIGHT {
-        for col in 0..CANVAS_WIDTH {
-            // if row % 2 == 0 && col % 2 == 0 {
-            canvas.set_pixel(row, col, true);
-            // }
+    let mut event_pump = sdl_context.event_pump().unwrap();
+
+    'running: loop {
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => break 'running,
+                _ => {}
+            }
         }
+
+        canvas.present();
+        std::thread::sleep(Duration::new(0, 1_000_000u32 / 60));
     }
 
-    event_loop.run(move |event, _, control_flow| match event {
-        Event::WindowEvent { event, .. } => match event {
-            WindowEvent::CloseRequested => control_flow.set_exit(),
-            _ => (),
-        },
-        Event::RedrawEventsCleared => {
-            let mut frame = display.draw();
-            frame.clear_color(
-                BACKGROUND_COLOR[0],
-                BACKGROUND_COLOR[1],
-                BACKGROUND_COLOR[2],
-                1.0,
-            );
-
-            canvas.draw(&mut frame).unwrap();
-
-            frame.finish().unwrap();
-        }
-        _ => (),
-    });
+    Ok(())
 }
