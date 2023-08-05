@@ -23,21 +23,40 @@ pub struct GLCanvas {
 
 impl GLCanvas {
     pub fn new(display: &Display) -> Result<Self> {
+        // let vertices = [
+        //     Vertex {
+        //         position: [0.5, 0.5],
+        //         color: *PIXEL_COLOR,
+        //     }, // top right
+        //     Vertex {
+        //         position: [0.5, -0.5],
+        //         color: *PIXEL_COLOR,
+        //     }, // bottom right
+        //     Vertex {
+        //         position: [-0.5, -0.5],
+        //         color: *PIXEL_COLOR,
+        //     }, // bottom left
+        //     Vertex {
+        //         position: [-0.5, 0.5],
+        //         color: *PIXEL_COLOR,
+        //     }, // top left
+        // ];
+
         let vertices = [
             Vertex {
-                position: [0.5, 0.5],
+                position: [1.0, 1.0],
                 color: *PIXEL_COLOR,
             }, // top right
             Vertex {
-                position: [0.5, -0.5],
+                position: [1.0, 0.0],
                 color: *PIXEL_COLOR,
             }, // bottom right
             Vertex {
-                position: [-0.5, -0.5],
+                position: [0.0, 0.0],
                 color: *PIXEL_COLOR,
             }, // bottom left
             Vertex {
-                position: [-0.5, 0.5],
+                position: [0.0, 1.0],
                 color: *PIXEL_COLOR,
             }, // top left
         ];
@@ -88,21 +107,20 @@ impl GLCanvas {
 }
 
 impl CanvasRenderer for GLCanvas {
-    fn set_pixel(&mut self, row: usize, col: usize, state: bool) -> Result<()> {
-        check_bounds(row, col)?;
+    fn set_pixel(&mut self, row: usize, col: usize, state: bool) {
+        check_bounds(row, col);
         self.pixels[(row * CANVAS_WIDTH) + col] = state;
-        Ok(())
     }
 
-    fn get_pixel(&self, row: usize, col: usize) -> Result<bool> {
-        check_bounds(row, col)?;
-        Ok(self.pixels[(row * CANVAS_WIDTH) + col])
+    fn get_pixel(&self, row: usize, col: usize) -> bool {
+        check_bounds(row, col);
+        self.pixels[(row * CANVAS_WIDTH) + col]
     }
 
     fn draw(&self, frame: &mut Frame) -> Result<()> {
         for row in 0..CANVAS_HEIGHT {
             for col in 0..CANVAS_WIDTH {
-                if self.get_pixel(row, col)? {
+                if self.get_pixel(row, col) {
                     self.draw_pixel(frame, row, col)?;
                 }
             }
@@ -112,10 +130,8 @@ impl CanvasRenderer for GLCanvas {
     }
 }
 
-fn check_bounds(row: usize, col: usize) -> Result<()> {
+fn check_bounds(row: usize, col: usize) {
     if row >= CANVAS_HEIGHT || col >= CANVAS_WIDTH {
-        bail!("Position ({}, {}) is out of bounds", row, col,);
-    } else {
-        Ok(())
+        panic!("Position ({}, {}) is out of bounds", row, col,);
     }
 }

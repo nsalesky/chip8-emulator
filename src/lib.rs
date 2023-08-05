@@ -3,7 +3,7 @@ mod errors;
 mod renderer;
 
 use anyhow::Result;
-use constants::BACKGROUND_COLOR;
+use constants::{BACKGROUND_COLOR, CANVAS_HEIGHT, CANVAS_WIDTH};
 use glium::glutin::dpi::LogicalSize;
 use glium::glutin::event::{Event, WindowEvent};
 use glium::glutin::event_loop::EventLoop;
@@ -34,7 +34,15 @@ pub fn run() -> Result<()> {
 
     let display = Display::new(window_builder, context_builder, &event_loop)?;
 
-    let canvas = GLCanvas::new(&display)?;
+    let mut canvas = GLCanvas::new(&display)?;
+
+    for row in 0..CANVAS_HEIGHT {
+        for col in 0..CANVAS_WIDTH {
+            // if row % 2 == 0 && col % 2 == 0 {
+            canvas.set_pixel(row, col, true);
+            // }
+        }
+    }
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent { event, .. } => match event {
