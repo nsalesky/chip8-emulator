@@ -3,13 +3,13 @@ mod errors;
 mod instruction_parser;
 mod virtual_computer;
 
-use std::{fs::File, time::Duration};
+use std::{collections::HashSet, fs::File, time::Duration};
 
 use anyhow::Result;
 use constants::{BACKGROUND_COLOR, WINDOW_HEIGHT, WINDOW_WIDTH};
 use instruction_parser::parse_instruction;
 use sdl2::{event::Event, keyboard::Keycode};
-use virtual_computer::VirtualComputer;
+use virtual_computer::{KeyPress, VirtualComputer};
 
 pub fn run(rom_file: File) -> Result<()> {
     let sdl_context = sdl2::init().unwrap();
@@ -31,6 +31,8 @@ pub fn run(rom_file: File) -> Result<()> {
 
     let mut vc = VirtualComputer::from_rom_file(rom_file)?;
 
+    let mut keys_pressed = HashSet::new();
+
     'running: loop {
         // 1. Input
         for event in event_pump.poll_iter() {
@@ -40,6 +42,22 @@ pub fn run(rom_file: File) -> Result<()> {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => break 'running,
+                Event::KeyDown {
+                    keycode: Some(keycode),
+                    ..
+                } => {
+                    if let Some(key) = KeyPress::from_sdl_key(keycode) {
+                        keys_pressed.insert(key);
+                    }
+                }
+                Event::KeyUp {
+                    keycode: Some(keycode),
+                    ..
+                } => {
+                    if let Some(key) = KeyPress::from_sdl_key(keycode) {
+                        keys_pressed.take(&key);
+                    }
+                }
                 _ => {}
             }
         }
@@ -47,9 +65,8 @@ pub fn run(rom_file: File) -> Result<()> {
         // 2. Update
         if let Some(instr_raw) = vc.fetch_instruction_and_increment_pc() {
             match parse_instruction(instr_raw) {
-                Some(instr) => vc.execute_instruction(instr, &mut canvas),
-                None => {}
-                // None => eprintln!("Unknown raw instruction: {:#06x}", instr_raw),
+                Some(instr) => vc.execute_instruction(instr, &mut canvas, &keys_pressed),
+                None => {} // None => eprintln!("Unknown raw instruction: {:#06x}", instr_raw),
             }
         }
 

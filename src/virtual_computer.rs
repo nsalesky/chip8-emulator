@@ -1,10 +1,11 @@
 use anyhow::{anyhow, Result};
 use bitmatch::bitmatch;
 use sdl2::{
+    keyboard::Keycode,
     rect::{Point, Rect},
     render::WindowCanvas,
 };
-use std::{fs::File, io::Read};
+use std::{collections::HashSet, fs::File, io::Read};
 
 use crate::{
     constants::{
@@ -20,6 +21,74 @@ pub enum CompatibilityMode {
 
     /// A newer version
     SuperChip,
+}
+
+#[derive(Hash, PartialEq, Eq)]
+pub enum KeyPress {
+    Key0 = 0,
+    Key1 = 1,
+    Key2 = 2,
+    Key3 = 3,
+    Key4 = 4,
+    Key5 = 5,
+    Key6 = 6,
+    Key7 = 7,
+    Key8 = 8,
+    Key9 = 9,
+    KeyA = 10,
+    KeyB = 11,
+    KeyC = 12,
+    KeyD = 13,
+    KeyE = 14,
+    KeyF = 15,
+}
+
+impl KeyPress {
+    pub fn from_sdl_key(key: Keycode) -> Option<Self> {
+        match key {
+            Keycode::X => Some(KeyPress::Key0),
+            Keycode::Num1 => Some(KeyPress::Key1),
+            Keycode::Num2 => Some(KeyPress::Key2),
+            Keycode::Num3 => Some(KeyPress::Key3),
+            Keycode::Q => Some(KeyPress::Key4),
+            Keycode::W => Some(KeyPress::Key5),
+            Keycode::E => Some(KeyPress::Key6),
+            Keycode::A => Some(KeyPress::Key7),
+            Keycode::S => Some(KeyPress::Key8),
+            Keycode::D => Some(KeyPress::Key9),
+            Keycode::Z => Some(KeyPress::KeyA),
+            Keycode::C => Some(KeyPress::KeyB),
+            Keycode::Num4 => Some(KeyPress::KeyC),
+            Keycode::R => Some(KeyPress::KeyD),
+            Keycode::F => Some(KeyPress::KeyE),
+            Keycode::V => Some(KeyPress::KeyF),
+            _ => None,
+        }
+    }
+}
+
+impl std::convert::From<u8> for KeyPress {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => KeyPress::Key0,
+            1 => KeyPress::Key1,
+            2 => KeyPress::Key2,
+            3 => KeyPress::Key3,
+            4 => KeyPress::Key4,
+            5 => KeyPress::Key5,
+            6 => KeyPress::Key6,
+            7 => KeyPress::Key7,
+            8 => KeyPress::Key8,
+            9 => KeyPress::Key9,
+            10 => KeyPress::KeyA,
+            11 => KeyPress::KeyB,
+            12 => KeyPress::KeyC,
+            13 => KeyPress::KeyD,
+            14 => KeyPress::KeyE,
+            15 => KeyPress::KeyF,
+            _ => panic!("cannot convert {} to a KeyPress", value),
+        }
+    }
 }
 
 pub struct VirtualComputer {
@@ -99,7 +168,12 @@ impl VirtualComputer {
     }
 
     #[bitmatch]
-    pub fn execute_instruction(&mut self, instr: InstructionType, canvas: &mut WindowCanvas) {
+    pub fn execute_instruction(
+        &mut self,
+        instr: InstructionType,
+        canvas: &mut WindowCanvas,
+        keys_pressed: &HashSet<KeyPress>,
+    ) {
         println!("Executing instruction: {:?}", instr);
 
         match instr {
@@ -273,8 +347,28 @@ impl VirtualComputer {
                     }
                 }
             }
-            InstructionType::SkipIfPressedVX(_) => todo!(),
-            InstructionType::SkipIfNotPressedVX(_) => todo!(),
+            InstructionType::SkipIfPressedVX(vx) => {
+                let x = self.variable_registers[vx as usize];
+                if x > 15 {
+                    eprintln!("Key {} is out of the range [0, 15]", x);
+                    return;
+                }
+
+                if keys_pressed.contains(&KeyPress::from(x)) {
+                    self.program_counter += 2;
+                }
+            }
+            InstructionType::SkipIfNotPressedVX(vx) => {
+                let x = self.variable_registers[vx as usize];
+                if x > 15 {
+                    eprintln!("Key {} is out of the range [0, 15]", x);
+                    return;
+                }
+
+                if !keys_pressed.contains(&KeyPress::from(x)) {
+                    self.program_counter += 2;
+                }
+            }
             InstructionType::FetchDelayTimerToVX(vx) => {
                 self.variable_registers[vx as usize] = self.delay_timer;
             }
@@ -295,7 +389,17 @@ impl VirtualComputer {
                     self.variable_registers[0xF] = 1;
                 }
             }
-            InstructionType::WaitForKeyInVX(_) => todo!(),
+            InstructionType::WaitForKeyInVX(vx) => {
+                let x = self.variable_registers[vx as usize];
+                if x > 15 {
+                    eprintln!("Key {} is out of the range [0, 15]", x);
+                    return;
+                }
+
+                if !keys_pressed.contains(&KeyPress::from(x)) {
+                    self.program_counter -= 2;
+                }
+            }
             InstructionType::SetIndexToFontCharInVX(_) => todo!(),
             InstructionType::BinaryCodedDecimalConversionForVX(vx) => {
                 let x = self.variable_registers[vx as usize];
