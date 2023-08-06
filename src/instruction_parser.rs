@@ -142,7 +142,7 @@ mod tests {
         0xFA65,
         Some(InstructionType::LoadMemoryToVariableRegistersFromVXAddress(0xA))
     )]
-    #[case(0xF008, None)]
+    #[case(0x0000, None)]
     fn parse_instruction_test(#[case] input: u16, #[case] expected: Option<InstructionType>) {
         assert_eq!(parse_instruction(input), expected);
     }

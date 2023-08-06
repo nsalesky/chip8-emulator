@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 use constants::{BACKGROUND_COLOR, WINDOW_HEIGHT, WINDOW_WIDTH};
+use instruction_parser::parse_instruction;
 use sdl2::{event::Event, keyboard::Keycode};
 use virtual_computer::VirtualComputer;
 
@@ -44,7 +45,11 @@ pub fn run() -> Result<()> {
         }
 
         // 2. Update
-        let instr = vc.fetch_instruction_and_increment_pc();
+        let instr_raw = vc.fetch_instruction_and_increment_pc();
+        match parse_instruction(instr_raw) {
+            Some(instr) => vc.execute_instruction(instr, &mut canvas),
+            None => eprintln!("Unknown raw instruction: {:#06x}", instr_raw),
+        }
 
         // 3. Render
         canvas.present();
