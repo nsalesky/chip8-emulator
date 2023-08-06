@@ -9,7 +9,8 @@ use std::{collections::HashSet, fs::File, io::Read};
 
 use crate::{
     constants::{
-        BACKGROUND_COLOR, DISPLAY_HEIGHT, DISPLAY_WIDTH, PIXEL_COLOR, PIXEL_HEIGHT, PIXEL_WIDTH,
+        BACKGROUND_COLOR, DISPLAY_HEIGHT, DISPLAY_WIDTH, FONT_DATA, FONT_STARTING_MEMORY_ADDRESS,
+        PIXEL_COLOR, PIXEL_HEIGHT, PIXEL_WIDTH,
     },
     instruction_parser::InstructionType,
 };
@@ -117,32 +118,30 @@ impl VirtualComputer {
 
         rom_file.read_to_end(&mut memory_buf)?;
 
+        let mut vc = VirtualComputer::default();
+
         // FIXME: this is messy but I wanted to just get something working
-        let mut memory = [0; 4096];
         for (i, data) in memory_buf.iter().enumerate() {
             if i < allowed_rom_size as usize {
-                memory[0x200 + i] = *data;
+                vc.memory[0x200 + i] = *data;
             }
         }
 
-        Ok(Self {
-            memory,
-            display: [[false; DISPLAY_WIDTH as usize]; DISPLAY_HEIGHT as usize],
-            stack: vec![],
-            program_counter: 0x200,
-            index_register: 0,
-            delay_timer: 255, // TODO: check if this is right
-            sound_timer: 255, // TODO: check if this is right
-            variable_registers: [0; 16],
-            compatibility_mode: CompatibilityMode::CosmicVIP,
-        })
+        Ok(vc)
     }
 }
 
 impl Default for VirtualComputer {
     fn default() -> Self {
+        let mut memory = [0; 4096];
+
+        // Fill the font characters in memory
+        for (i, font_byte) in FONT_DATA.into_iter().enumerate() {
+            memory[*FONT_STARTING_MEMORY_ADDRESS as usize + i] = *font_byte;
+        }
+
         Self {
-            memory: [0; 4096],
+            memory,
             display: [[false; DISPLAY_WIDTH as usize]; DISPLAY_HEIGHT as usize],
             stack: vec![],
             program_counter: 0x200,
@@ -400,7 +399,12 @@ impl VirtualComputer {
                     self.program_counter -= 2;
                 }
             }
-            InstructionType::SetIndexToFontCharInVX(_) => todo!(),
+            InstructionType::SetIndexToFontCharInVX(vx) => {
+                let x = 0xF & self.variable_registers[vx as usize];
+
+                // Characters are 5 bytes
+                self.index_register = (*FONT_STARTING_MEMORY_ADDRESS + (x * 5)) as u16;
+            }
             InstructionType::BinaryCodedDecimalConversionForVX(vx) => {
                 let x = self.variable_registers[vx as usize];
                 self.memory[self.index_register as usize] = x / 100;
