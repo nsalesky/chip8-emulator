@@ -14,3 +14,7 @@ anyhow = "1.0.72"
 sdl2 = "0.35.2"
 bitmatch = "0.1.1"
 
+[dev-dependencies]
+rstest = "0.18.1"
+pretty_assertions = "1.4.0"
+

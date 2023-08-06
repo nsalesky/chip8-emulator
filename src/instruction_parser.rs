@@ -1,5 +1,6 @@
 use bitmatch::bitmatch;
 
+#[derive(Debug, PartialEq)]
 pub enum InstructionType {
     ClearScreen,
     JumpToMemoryLocation(u16),
@@ -100,6 +101,51 @@ fn extract_parts(instr: u16) -> (u8, u8, u8, u8, u8, u16) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(0x00E0, Some(InstructionType::ClearScreen))]
+    #[case(0x1123, Some(InstructionType::JumpToMemoryLocation(0x123)))]
+    #[case(0x00EE, Some(InstructionType::ReturnFromSubroutine))]
+    #[case(0x2456, Some(InstructionType::CallSubroutine(0x456)))]
+    #[case(0x3AF1, Some(InstructionType::SkipIfRegisterEqValue { vx: 0xA, value: 0xF1 }))]
+    #[case(0x4321, Some(InstructionType::SkipIfRegisterNeqValue { vx: 3, value: 0x21 }))]
+    #[case(0x5120, Some(InstructionType::SkipIfRegistersEq { vx: 1, vy: 2 }))]
+    #[case(0x9F40, Some(InstructionType::SkipIfRegistersNeq { vx: 0xF, vy: 4 }))]
+    #[case(0x6234, Some(InstructionType::UpdateRegister { vx: 2, value: 0x34 }))]
+    #[case(0x7B00, Some(InstructionType::AddValueToRegister { vx: 0xB, value: 0 }))]
+    #[case(0x8380, Some(InstructionType::CopyRegister { vx: 3, vy: 8 }))]
+    #[case(0x8501, Some(InstructionType::BitwiseOR { vx: 5, vy: 0 }))]
+    #[case(0x84C2, Some(InstructionType::BitwiseAND { vx: 4, vy: 0xC }))]
+    #[case(0x8193, Some(InstructionType::BitwiseXOR { vx: 1, vy: 9 }))]
+    #[case(0x8024, Some(InstructionType::AddRegisterToRegister { vx: 0, vy: 2 }))]
+    #[case(0x8815, Some(InstructionType::SubtractXY { vx: 8, vy: 1 }))]
+    #[case(0x8477, Some(InstructionType::SubtractYX { vx: 4, vy: 7 }))]
+    #[case(0x8126, Some(InstructionType::ShiftRight { vx: 1, vy: 2 }))]
+    #[case(0x8C5E, Some(InstructionType::ShiftLeft { vx: 0xC, vy: 5 }))]
+    #[case(0xA987, Some(InstructionType::SetIndexRegister(0x987)))]
+    #[case(0xB357, Some(InstructionType::JumpWithOffset(0x357)))]
+    #[case(0xC801, Some(InstructionType::GenerateRandomNumber { vx: 8, bitmask: 1 }))]
+    #[case(0xD59A, Some(InstructionType::Display { vx: 5, vy: 9, n: 0xA }))]
+    #[case(0xE49E, Some(InstructionType::SkipIfPressedVX(4)))]
+    #[case(0xE8A1, Some(InstructionType::SkipIfNotPressedVX(8)))]
+    #[case(0xF407, Some(InstructionType::FetchDelayTimerToVX(4)))]
+    #[case(0xFE15, Some(InstructionType::SetDelayTimerToVX(0xE)))]
+    #[case(0xF018, Some(InstructionType::SetSoundTimerToVX(0)))]
+    #[case(0xFF1E, Some(InstructionType::AddToIndexFromVX(0xF)))]
+    #[case(0xF20A, Some(InstructionType::WaitForKeyInVX(2)))]
+    #[case(0xF729, Some(InstructionType::SetIndexToFontCharInVX(7)))]
+    #[case(0xFD33, Some(InstructionType::BinaryCodedDecimalConversionForVX(0xD)))]
+    #[case(0xF455, Some(InstructionType::StoreVariableRegistersToMemoryUpToVX(4)))]
+    #[case(
+        0xFA65,
+        Some(InstructionType::LoadMemoryToVariableRegistersFromVXAddress(0xA))
+    )]
+    #[case(0xF008, None)]
+    fn parse_instruction_test(#[case] input: u16, #[case] expected: Option<InstructionType>) {
+        assert_eq!(parse_instruction(input), expected);
+    }
 
     #[test]
     fn extract_parts_works() {

@@ -35,7 +35,5 @@ impl VirtualComputer {
         instr
     }
 
-    // aaaaaaaa00000000
-
     pub fn parse_instruction(&mut self, instr: u16) {}
 }
