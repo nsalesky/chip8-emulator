@@ -13,6 +13,8 @@ path = "src/main.rs"
 anyhow = "1.0.72"
 sdl2 = "0.35.2"
 bitmatch = "0.1.1"
+rand = "0.8.5"
+clap = { version = "4.3.19", features = ["derive"] }
 
 [dev-dependencies]
 rstest = "0.18.1"
