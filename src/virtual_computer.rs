@@ -341,9 +341,9 @@ impl VirtualComputer {
                                     canvas.set_draw_color(*PIXEL_COLOR);
                                 }
                                 canvas
-                                    .draw_rect(Rect::new(
-                                        (px * PIXEL_WIDTH) as i32,
-                                        (py * PIXEL_HEIGHT) as i32,
+                                    .fill_rect(Rect::new(
+                                        (px as u32 * PIXEL_WIDTH as u32) as i32,
+                                        (py as u32 * PIXEL_HEIGHT as u32) as i32,
                                         PIXEL_WIDTH as u32,
                                         PIXEL_HEIGHT as u32,
                                     ))
