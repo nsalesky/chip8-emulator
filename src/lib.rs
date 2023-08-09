@@ -3,7 +3,11 @@ mod errors;
 mod instruction_parser;
 mod virtual_computer;
 
-use std::{collections::HashSet, fs::File, time::Duration};
+use std::{
+    collections::HashSet,
+    fs::File,
+    time::{Duration, Instant},
+};
 
 use anyhow::Result;
 use constants::{BACKGROUND_COLOR, WINDOW_HEIGHT, WINDOW_WIDTH};
@@ -33,7 +37,16 @@ pub fn run(rom_file: File) -> Result<()> {
 
     let mut keys_pressed = HashSet::new();
 
+    let mut last_ticked = Instant::now();
+
     'running: loop {
+        // Check if it is time to tick the timers at 60hz
+        let elapsed_time = last_ticked.elapsed();
+        if elapsed_time.as_millis() > (1000.0 / 60.0) as u128 {
+            last_ticked = Instant::now();
+            vc.decrement_timers();
+        }
+
         // 1. Input
         for event in event_pump.poll_iter() {
             match event {

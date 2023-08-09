@@ -1,7 +1,7 @@
 use sdl2::pixels::Color;
 
-pub const WINDOW_WIDTH: u32 = 640;
-pub const WINDOW_HEIGHT: u32 = 320;
+pub const WINDOW_WIDTH: u32 = 896;
+pub const WINDOW_HEIGHT: u32 = 448;
 
 pub const DISPLAY_WIDTH: u8 = 64;
 pub const DISPLAY_HEIGHT: u8 = 32;

@@ -155,6 +155,16 @@ impl Default for VirtualComputer {
 }
 
 impl VirtualComputer {
+    pub fn decrement_timers(&mut self) {
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
+        }
+
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
+        }
+    }
+
     pub fn fetch_instruction_and_increment_pc(&mut self) -> Option<u16> {
         if self.program_counter >= 4096 {
             return None;
@@ -338,6 +348,7 @@ impl VirtualComputer {
                                         PIXEL_HEIGHT as u32,
                                     ))
                                     .unwrap();
+                                // canvas.draw_point(Point::new(px as i32, py as i32)).unwrap();
 
                                 self.display[py as usize][px as usize] =
                                     !self.display[py as usize][px as usize];
@@ -407,8 +418,9 @@ impl VirtualComputer {
             }
             InstructionType::BinaryCodedDecimalConversionForVX(vx) => {
                 let x = self.variable_registers[vx as usize];
-                self.memory[self.index_register as usize] = x / 100;
-                self.memory[(self.index_register + 1) as usize] = x / 10;
+                self.memory[self.index_register as usize] = (x as f64 / 100.0).floor() as u8;
+                self.memory[(self.index_register + 1) as usize] =
+                    ((x % 100) as f64 / 10.0).floor() as u8;
                 self.memory[(self.index_register + 2) as usize] = x % 10;
             }
             InstructionType::StoreVariableRegistersToMemoryUpToVX(vx) => {
